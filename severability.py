@@ -6,6 +6,7 @@ from __future__ import print_function
 __version__ ="0.0.1"
 
 import argparse
+import random
 import numpy as np
 
 def is_number(s):
@@ -69,7 +70,7 @@ node names (names can be any strings, not just integers).'''
         A[i,j] = A[i,j] + e[2]
         if not directed and (i != j):
             A[j,i] = A[j,i] + e[2]
-    return (A, ind2name)
+    return (A, ind2name, name2ind)
 
 
 def transition_matrix(adj):
@@ -114,6 +115,47 @@ def severability_of_component(P, C, t):
     P_C_power = P_C**t
     return severability_of_matrix_power(P_C_power)
 
+def component_cover(P, t, max_size=50):
+    '''This is almost like partitioning a graph. We want to cover the
+    entire network with components such that every node is either in a
+    component, or is an "orphan"---i.e. it gets kicked out of every
+    component we try to put it in by the KL steps. Orphans will not be
+    returned in the output, but can be identified as the missing nodes
+    not covered by any component.
+
+    P (np.matrix):      Markov transition matrix
+    t (int):            Markov time
+    max_size (int):     stop the search at max_size
+
+    returns list(component, severability)
+    '''
+    remaining_nodes = set(range(P.shape[0]))
+    ans = []
+    potential_orphans = set()
+    while len(remaining_nodes) > 0:
+        n = random.sample(remaining_nodes, 1)[0]
+        C, sev = component_optimise(P, [n], t, max_size)
+        if len(remaining_nodes.intersection(C))>0:
+            ans.append((C, sev))
+            remaining_nodes.difference_update(C)
+        if n in remaining_nodes:
+            potential_orphans.add(n)
+            remaining_nodes.remove(n)
+    # For all potential orphans, try again using node_component, which
+    # tries to keep the starting node in the community.
+    orphans = set()
+    while len(potential_orphans) > 0:
+        n = random.sample(potential_orphans, 1)[0]
+        C, sev = node_component(P, n, t, max_size)
+        if len(potential_orphans.intersection(C))>0:
+            ans.append((C, sev))
+            potential_orphans.difference_update(C)
+        if n in potential_orphans:
+            orphans.add(n)
+            potential_orphans.remove(n)
+    return ans
+
+
 def node_component(P, i, t, max_size=50):
     '''Optimizes for the best component including a node:
     
@@ -129,7 +171,7 @@ def node_component(P, i, t, max_size=50):
     # Order by highest severability directions to add nodes
     n_sorted = sorted(neighbors,
             key=lambda n: -1*severability_of_component(P, [i, n], t))
-    for i in n_sorted:
+    for n in n_sorted:
         component, sev = component_optimise(P, [i, n], t, max_size)
         if i in component:
             break
@@ -252,15 +294,28 @@ def main():
     parser.add_argument("--version", action="version",
             version="%(prog)s {version}".format(version=__version__))
     parser.add_argument("graph", help="input graph file")
-    parser.add_argument("-i", "--initial", help="Starting node to find component",
-            type=int, default=4)
+    parser.add_argument("-i", "--initial", help="Starting node to find component")
     parser.add_argument("-t", "--time", help="Markov time to run severability at",
+            type=int, default=4)
+    parser.add_argument("-s", "--max-size", help="Maximum search size for the communities found",
             type=int, default=4)
     args = parser.parse_args()
 
-    adj, ind2name = load_3column_graph(args.graph)
+    adj, ind2name, name2ind = load_3column_graph(args.graph)
     P = transition_matrix(adj)
-    print(severability_of_component(P,[1,2],4))
+
+    if args.initial is not None:
+        print(name2ind[args.initial])
+        C, sev = node_component(P, name2ind[args.initial], args.time,
+            args.max_size)
+        
+        print([ind2name[n] for n in C])
+        print(sev)
+    else:
+        ans = component_cover(P, args.time, args.max_size)
+        for C, sev in ans:
+            print([ind2name[n] for n in C])
+            print(sev)
 
 
 if __name__ == "__main__":
