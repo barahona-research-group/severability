@@ -211,10 +211,10 @@ def component_optimise(P, C, t, max_size=50):
     i = 1
     sev_max = 0
     C_max = C
-    max_size = max(max_size, len(connected_component(P, C)))
+    max_size = min(max_size, len(connected_component(P, C)))
     # Get up to max_size for the community using a 2-to-1 mix of greedy adds
     # and Kernighan-Lin steps
-    while (len(C) < max_size) and (i < 10*max_size):
+    while (len(C) < max_size) and (i < 3*max_size):
         if (i % 3) == 0:
             (C, sev) = kernighan_lin_step(P, C, t)
         else:
