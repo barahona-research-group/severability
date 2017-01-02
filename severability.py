@@ -173,7 +173,7 @@ def node_component(P, i, t, max_size=50):
 
     returns (component, severability)
     '''
-    linked_to = P[i,:].nonzero()[1].tolist()
+    linked_to = np.asarray(P[i,:]).nonzero()[1].tolist()
     neighbors = [item for item in linked_to if item not in [i]]
     # Order by highest severability directions to add nodes
     n_sorted = sorted(neighbors,
@@ -191,7 +191,7 @@ def connected_component(P, C):
     '''Finds the max connected component for component C
     Currently uses BFS. Possibly want to reimplement with DFS?'''
     component = C
-    linked_to = np.sum(P[component,:],0).nonzero()[1].tolist()
+    linked_to = np.asarray(np.sum(P[component,:],0)).nonzero()[1].tolist()
     new_component = list(set(C + linked_to))
     if len(new_component) == len(component):
         return new_component
@@ -243,7 +243,7 @@ def greedy_add_step(P, C, t):
     '''Greedily adds a node to C such that the new severability is as high
     as possible. Note that a node *will* be added, even if any added node
     decreases the severability, unless there are no neighbors'''
-    linked_to = np.sum(P[C,:],0).nonzero()[1].tolist()
+    linked_to = np.asarray(np.sum(P[C,:],0)).nonzero()[1].tolist()
     neighbors = [item for item in linked_to if item not in C]
     if len(neighbors)>0:
         new_node = max(neighbors,
