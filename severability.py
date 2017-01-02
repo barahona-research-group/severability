@@ -187,6 +187,17 @@ def node_component(P, i, t, max_size=50):
     else:
         return (component, sev)
 
+def connected_component(P, C):
+    '''Finds the max connected component for component C
+    Currently uses BFS. Possibly want to reimplement with DFS?'''
+    component = C
+    linked_to = np.sum(P[component,:],0).nonzero()[1].tolist()[0]
+    new_component = list(set(C + linked_to))
+    if len(new_component) == len(component):
+        return new_component
+    else:
+        return connected_component(P, new_component)
+
 def component_optimise(P, C, t, max_size=50):
     '''Optimises for the best component starting from a community:
 
@@ -200,9 +211,10 @@ def component_optimise(P, C, t, max_size=50):
     i = 1
     sev_max = 0
     C_max = C
+    max_size = max(max_size, len(connected_component(P, C)))
     # Get up to max_size for the community using a 2-to-1 mix of greedy adds
     # and Kernighan-Lin steps
-    while len(C) < max_size:
+    while (len(C) < max_size) and (i < 10*max_size):
         if (i % 3) == 0:
             (C, sev) = kernighan_lin_step(P, C, t)
         else:
@@ -230,12 +242,13 @@ def component_optimise(P, C, t, max_size=50):
 def greedy_add_step(P, C, t):
     '''Greedily adds a node to C such that the new severability is as high
     as possible. Note that a node *will* be added, even if any added node
-    decreases the severability'''
+    decreases the severability, unless there are no neighbors'''
     linked_to = np.sum(P[C,:],0).nonzero()[1].tolist()[0]
     neighbors = [item for item in linked_to if item not in C]
-    new_node = max(neighbors,
-            key=lambda n: severability_of_component(P, C + [n], t))
-    C = C + [new_node]
+    if len(neighbors)>0:
+        new_node = max(neighbors,
+                key=lambda n: severability_of_component(P, C + [n], t))
+        C = C + [new_node]
     return (C, severability_of_component(P, C, t))
 
 def greedy_remove_step(P, C, t):
@@ -248,8 +261,8 @@ def greedy_remove_step(P, C, t):
     return (C, severability_of_component(P, C, t))
 
 def kernighan_lin_step(P, C, t):
-    '''Either removes or adds a node, optimising severability. A node *will*
-    be added or removed even if it decreases severability from doing nothing'''
+    '''if can add a node, will either remove or add a node, optimising sev
+    if can't add a node because no neighbors, will either remove a node or stay constant.'''
     C_add, sev_add = greedy_add_step(P, C, t)
     C_rem, sev_rem = greedy_remove_step(P, C, t)
     if sev_add > sev_rem:
