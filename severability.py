@@ -8,6 +8,7 @@ __version__ ="0.0.1"
 import argparse
 import random
 import numpy as np
+np.seterr(all='raise')
 
 def is_number(s):
     try:
@@ -97,6 +98,7 @@ def mixing(P_C_power):
     '''
     diag = np.sum(P_C_power,1)
     norm_mat = P_C_power / diag
+        
     quasi_dist = np.average(norm_mat,0)
 
     mixing = 1 - ((0.5 / P_C_power.shape[0])
@@ -106,7 +108,12 @@ def mixing(P_C_power):
 
 def severability_of_matrix_power(P_C_power):
     '''Computes severability, which is 1/2 * (mixing + retention)'''
-    return (mixing(P_C_power) + retention(P_C_power))/2
+    diag = np.sum(P_C_power, 1)
+    if 0 in diag:
+        sev = 0 # Don't let disconnected matrices
+    else:
+        sev = (mixing(P_C_power) + retention(P_C_power))/2
+    return sev
 
 def severability_of_component(P, C, t):
     '''Computes severability of component C with transition matrix P at Markov
@@ -298,7 +305,7 @@ def main():
     parser.add_argument("-t", "--time", help="Markov time to run severability at",
             type=int, default=4)
     parser.add_argument("-s", "--max-size", help="Maximum search size for the communities found",
-            type=int, default=4)
+            type=int, default=50)
     args = parser.parse_args()
 
     adj, ind2name, name2ind = load_3column_graph(args.graph)
@@ -309,13 +316,16 @@ def main():
         C, sev = node_component(P, name2ind[args.initial], args.time,
             args.max_size)
         
-        print([ind2name[n] for n in C])
-        print(sev)
+        print(sev, [ind2name[n] for n in C])
     else:
         ans = component_cover(P, args.time, args.max_size)
+        appearing = set()
         for C, sev in ans:
-            print([ind2name[n] for n in C])
-            print(sev)
+            print(sev, [ind2name[n] for n in C])
+            appearing.update(C)
+        print("Nodes appearing: ", len(appearing))
+        print("Num communities: ", len(ans))
+
 
 
 if __name__ == "__main__":
