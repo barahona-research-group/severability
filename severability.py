@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __version__ ="0.0.1"
 
+import sys
 import argparse
 import random
 import numpy as np
@@ -208,6 +209,7 @@ def component_optimise(P, C, t, max_size=50):
 
     returns (component, severability)
     '''
+    sys.stderr.write('.')
     i = 1
     sev_max = 0
     C_max = C
@@ -329,15 +331,17 @@ def main():
         C, sev = node_component(P, name2ind[args.initial], args.time,
             args.max_size)
         
-        print(sev, [ind2name[n] for n in C])
+        print(sev, len(C), [ind2name[n] for n in C])
     else:
         ans = component_cover(P, args.time, args.max_size)
         appearing = set()
+        print("")
         for C, sev in ans:
-            print(sev, [ind2name[n] for n in C])
+            print(sev, "\t", len(C), "\t", sorted([ind2name[n] for n in C]))
             appearing.update(C)
-        print("Nodes appearing: ", len(appearing))
-        print("Num communities: ", len(ans))
+        print("Nodes appearing:\t", len(appearing))
+        print("Num communities:\t", len(ans))
+    print("Markov time:\t", args.time)
 
 
 
