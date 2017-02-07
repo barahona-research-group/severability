@@ -322,6 +322,7 @@ def main():
     parser.add_argument("-s", "--max-size", help="Maximum search size for the communities found",
             type=int, default=50)
     args = parser.parse_args()
+    print(args)
 
     adj, ind2name, name2ind = load_3column_graph(args.graph)
     P = transition_matrix(adj)
