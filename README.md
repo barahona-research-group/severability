@@ -1,2 +1,2 @@
 # severability
-Code for the severability community quality function
+Code for the severability component quality function
