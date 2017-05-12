@@ -20,12 +20,14 @@ def smallworld(nodes, degree, beta):
     Then for every edge, with probability beta randomly rewires it.
     '''
     A = set(gror.unweighted_ring(nodes, degree))
-    B = []
+    A_copy = A
     for edge in A:
         if np.random.random() > beta:
-            B.append(edge)
+            #B.append(edge)
+            pass
         else:
             i, j, w = edge
+            A_copy.remove(edge)
             # switch to numerical order
             if j < i:
                 temp = j
@@ -33,10 +35,10 @@ def smallworld(nodes, degree, beta):
                 i = temp
             while True:
                 candidate = np.random.choice(nodes)
-                if ((i, candidate, w) not in A) and ((candidate, i, w) not in A) and (candidate != i):
-                    B.append((i, candidate, w))
+                if ((i, candidate, w) not in A_copy) and ((candidate, i, w) not in A_copy) and (candidate != i):
+                    A_copy.add((i, candidate, w))
                     break
-    return B
+    return list(A_copy)
 
 def ring_of_smallworlds(inner_num, outer_num, inner_degree=2, outer_links=1, beta=0.5):
     '''Generates a ring of small worlds with inner_num nodes in the inner worlds
