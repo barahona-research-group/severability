@@ -14,5 +14,5 @@ If no initial node is chosen, then the program will find sufficiently many compo
 
 To run an example, run the following:
 
-python examples/gen_ring_of_smallworlds.py 25 > 2smallworlds.txt
-python severability.py 2smallworlds.txt
+* python examples/gen_ring_of_smallworlds.py 25 > 2smallworlds.txt
+* python severability.py 2smallworlds.txt
