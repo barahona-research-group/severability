@@ -188,14 +188,13 @@ def node_component(P, i, t, max_size=50):
     n_sorted = sorted(
         neighbors, key=lambda n: -1 * severability_of_component(P, [i, n], t)
     )
+
     for n in n_sorted:
         component, sev = component_optimise(P, [i, n], t, max_size)
         if i in component:
-            break
-    if i not in component:
-        return ([], 0)
-    else:
-        return (component, sev)
+            return (component, sev)
+
+    return ([], 0)
 
 
 def connected_component(P, C):
