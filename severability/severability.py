@@ -9,6 +9,7 @@ import sys
 import argparse
 import random
 import numpy as np
+import numpy.linalg as la
 
 np.seterr(all="raise")
 
@@ -126,9 +127,12 @@ def severability_of_matrix_power(P_C_power):
 def severability_of_component(P, C, t):
     """Computes severability of component C with transition matrix P at Markov
     time t"""
-    P_C = P[[[i] for i in C], C]  # Get submatrix
-    P_C_power = P_C**t
-    return severability_of_matrix_power(P_C_power)
+    P_C = np.asarray(P[[[i] for i in C], C])  # Get submatrix
+    if len(P_C) == 0:
+        return 0
+    else:
+        P_C_power = la.matrix_power(P_C, t)  # P_C**t
+        return severability_of_matrix_power(P_C_power)
 
 
 def component_cover(P, t, max_size=50):
