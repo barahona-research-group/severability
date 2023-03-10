@@ -219,7 +219,7 @@ def component_optimise(P, C, t, max_size=50):
 
     returns (component, severability)
     """
-    sys.stderr.write(".")
+    # sys.stderr.write(".") This is to print the dots in output
     i = 1
     sev_max = 0
     C_max = C
