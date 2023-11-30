@@ -5,11 +5,9 @@ from __future__ import print_function
 
 __version__ = "0.0.1"
 
-import sys
 import argparse
 import random
 import numpy as np
-import numpy.linalg as la
 
 np.seterr(all="raise")
 
@@ -85,6 +83,8 @@ def transition_matrix(adj):
     adj (np.matrix): n x n matrix specifying the connection pattern of a graph
 
     returns a transition matrix: an n x n matrix P where P = diag(A)^-1 * A"""
+    if type(adj) != np.matrix:
+        raise TypeError("Adjacency matrix expects np.matrix type.")
     diag = np.sum(adj, 1)
     trans_mat = adj / diag
     return trans_mat
@@ -127,12 +127,9 @@ def severability_of_matrix_power(P_C_power):
 def severability_of_component(P, C, t):
     """Computes severability of component C with transition matrix P at Markov
     time t"""
-    P_C = np.asarray(P[[[i] for i in C], C])  # Get submatrix
-    if len(P_C) == 0:
-        return 0
-    else:
-        P_C_power = la.matrix_power(P_C, t)  # P_C**t
-        return severability_of_matrix_power(P_C_power)
+    P_C = P[[[i] for i in C], C]  # Get submatrix
+    P_C_power = P_C**t
+    return severability_of_matrix_power(P_C_power)
 
 
 def component_cover(P, t, max_size=50):
@@ -149,6 +146,8 @@ def component_cover(P, t, max_size=50):
 
     returns list(component, severability)
     """
+    if type(P) != np.matrix:
+        raise TypeError("Transition matrix expects np.matrix type.")
     remaining_nodes = set(range(P.shape[0]))
     ans = []
     potential_orphans = set()
@@ -186,26 +185,29 @@ def node_component(P, i, t, max_size=50):
 
     returns (component, severability)
     """
-    linked_to = np.asarray(P[i, :]).nonzero()[0].tolist()
+    if type(P) != np.matrix:
+        raise TypeError("Transition matrix expects np.matrix type.")
+    linked_to = np.asarray(P[i, :]).nonzero()[1].tolist()
     neighbors = [item for item in linked_to if item not in [i]]
     # Order by highest severability directions to add nodes
     n_sorted = sorted(
         neighbors, key=lambda n: -1 * severability_of_component(P, [i, n], t)
     )
-
     for n in n_sorted:
         component, sev = component_optimise(P, [i, n], t, max_size)
         if i in component:
-            return (component, sev)
-
-    return ([], 0)
+            break
+    if i not in component:
+        return ([], 0)
+    else:
+        return (component, sev)
 
 
 def connected_component(P, C):
     """Finds the max connected component for component C
     Currently uses BFS. Possibly want to reimplement with DFS?"""
     component = C
-    linked_to = np.asarray(np.sum(P[component, :], 0)).nonzero()[0].tolist()
+    linked_to = np.asarray(np.sum(P[component, :], 0)).nonzero()[1].tolist()
     new_component = list(set(C + linked_to))
     if len(new_component) == len(component):
         return new_component
@@ -223,7 +225,6 @@ def component_optimise(P, C, t, max_size=50):
 
     returns (component, severability)
     """
-    # sys.stderr.write(".") This is to print the dots in output
     i = 1
     sev_max = 0
     C_max = C
@@ -260,7 +261,7 @@ def greedy_add_step(P, C, t):
     """Greedily adds a node to C such that the new severability is as high
     as possible. Note that a node *will* be added, even if any added node
     decreases the severability, unless there are no neighbors"""
-    linked_to = np.asarray(np.sum(P[C, :], 0)).nonzero()[0].tolist()
+    linked_to = np.asarray(np.sum(P[C, :], 0)).nonzero()[1].tolist()
     neighbors = [item for item in linked_to if item not in C]
     if len(neighbors) > 0:
         new_node = max(
@@ -283,7 +284,8 @@ def greedy_remove_step(P, C, t):
 
 def kernighan_lin_step(P, C, t):
     """if can add a node, will either remove or add a node, optimising sev
-    if can't add a node because no neighbors, will either remove a node or stay constant."""
+    if can't add a node because no neighbors, will either remove a node or stay constant.
+    """
     C_add, sev_add = greedy_add_step(P, C, t)
     C_rem, sev_rem = greedy_remove_step(P, C, t)
     if sev_add > sev_rem:
