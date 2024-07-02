@@ -27,20 +27,25 @@ import severability
 P = severability.transition_matrix(A)
 ```
 
-We can then use Severability to compute a graph partition of overlapping clusters (also called "component cover"):
+We can then use Severability to compute a graph partition of overlapping clusters (also called "component cover"), which is a minimal cover of the graph with overlapping clusters described in Appendix D:
 
 ```python
 partition = severability.component_cover(P,t=1)
 ```
 
-The parameter `t` specifies the Markov time and in regular graphs, we expect that the partition gets coarser when increasing `t`.
+The parameter `t` specifies the Markov time and in regular graphs, we expect that the partition gets coarser when increasing `t`. Note that `component_cover()` is not fully deterministic because it iterates through the nodes in a random order.
 
-If we are only interested in the local community of a single node `i`, we can compute its "node component":
+If we are only interested in the local community of a single node `i`, we can compute its unique "node component":
 
 ```python
 cluster = severability.node_component(P,i=i,t=1)
 ```
 
+We can also obtain a unique graph partition by combining the node components of all individual nodes, which we call the "node component cover":
+
+```python
+partition = severability.node_component_cover(P,t=1)
+```
 
 ### Command line interface
 
