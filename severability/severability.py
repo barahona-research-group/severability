@@ -83,7 +83,7 @@ def transition_matrix(adj):
     adj (np.matrix): n x n matrix specifying the connection pattern of a graph
 
     returns a transition matrix: an n x n matrix P where P = diag(A)^-1 * A"""
-    if type(adj) != np.matrix:
+    if not isinstance(adj, np.matrix):
         raise TypeError("Adjacency matrix expects np.matrix type.")
     diag = np.sum(adj, 1)
     trans_mat = adj / diag
@@ -146,7 +146,7 @@ def component_cover(P, t, max_size=50):
 
     returns list(component, severability)
     """
-    if type(P) != np.matrix:
+    if not isinstance(P, np.matrix):
         raise TypeError("Transition matrix expects np.matrix type.")
     remaining_nodes = set(range(P.shape[0]))
     ans = []
@@ -185,7 +185,7 @@ def node_component(P, i, t, max_size=50):
 
     returns (component, severability)
     """
-    if type(P) != np.matrix:
+    if not isinstance(P, np.matrix):
         raise TypeError("Transition matrix expects np.matrix type.")
     linked_to = np.asarray(P[i, :]).nonzero()[1].tolist()
     neighbors = [item for item in linked_to if item not in [i]]
