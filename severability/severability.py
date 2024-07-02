@@ -132,7 +132,7 @@ def severability_of_component(P, C, t):
     return severability_of_matrix_power(P_C_power)
 
 
-def component_cover(P, t, max_size=50):
+def minimal_component_cover(P, t, max_size=50):
     """This is almost like partitioning a graph. We want to cover the
     entire network with components such that every node is either in a
     component, or is an "orphan"---i.e. it gets kicked out of every
@@ -325,7 +325,7 @@ def main():
 
         print(sev, len(C), [ind2name[n] for n in C])
     else:
-        ans = component_cover(P, args.time, args.max_size)
+        ans = minimal_component_cover(P, args.time, args.max_size)
         appearing = set()
         print("")
         for C, sev in ans:
