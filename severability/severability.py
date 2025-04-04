@@ -6,10 +6,12 @@ from __future__ import print_function
 __version__ = "0.0.1"
 
 import argparse
-import random
 import numpy as np
 
-np.seterr(all="raise")
+from tqdm import tqdm
+
+# np.seterr(all="raise")
+np.seterr(divide="ignore", invalid="ignore", over="ignore", under="ignore")
 
 
 def is_number(s):
@@ -128,11 +130,14 @@ def severability_of_component(P, C, t):
     """Computes severability of component C with transition matrix P at Markov
     time t"""
     P_C = P[[[i] for i in C], C]  # Get submatrix
-    P_C_power = P_C**t
+    if t > 1:
+        P_C_power = P_C**t
+    else:
+        P_C_power = P_C
     return severability_of_matrix_power(P_C_power)
 
 
-def minimal_component_cover(P, t, max_size=50):
+def component_cover(P, t, max_size=50, seed=42):
     """This is almost like partitioning a graph. We want to cover the
     entire network with components such that every node is either in a
     component, or is an "orphan"---i.e. it gets kicked out of every
@@ -148,31 +153,66 @@ def minimal_component_cover(P, t, max_size=50):
     """
     if not isinstance(P, np.matrix):
         raise TypeError("Transition matrix expects np.matrix type.")
+
+    # initialise random number generator
+    if isinstance(seed, np.random._generator.Generator):
+        rng = seed
+    else:
+        rng = np.random.default_rng(seed)
+
+    # initialise node sets
     remaining_nodes = set(range(P.shape[0]))
-    ans = []
+    partition = []
     potential_orphans = set()
+
+    # iterate through remaining nodes
     while len(remaining_nodes) > 0:
-        n = random.sample(remaining_nodes, 1)[0]
+        n = int(rng.choice(np.array(list(remaining_nodes))))
         C, sev = component_optimise(P, [n], t, max_size)
         if len(remaining_nodes.intersection(C)) > 0:
-            ans.append((C, sev))
+            partition.append((C, sev))
             remaining_nodes.difference_update(C)
         if n in remaining_nodes:
             potential_orphans.add(n)
             remaining_nodes.remove(n)
-    # For all potential orphans, try again using node_component, which
+
+    # for all potential orphans, try again using node_component, which
     # tries to keep the starting node in the community.
     orphans = set()
     while len(potential_orphans) > 0:
-        n = random.sample(potential_orphans, 1)[0]
+        n = int(rng.choice(np.array(list(potential_orphans))))
         C, sev = node_component(P, n, t, max_size)
         if len(potential_orphans.intersection(C)) > 0:
-            ans.append((C, sev))
+            partition.append((C, sev))
             potential_orphans.difference_update(C)
         if n in potential_orphans:
             orphans.add(n)
             potential_orphans.remove(n)
-    return ans
+    return partition
+
+
+def node_component_cover(P, t, max_size=50, disable_tqdm=True):
+    """Compute node component cover."""
+
+    if not isinstance(P, np.matrix):
+        raise TypeError("Transition matrix expects np.matrix type.")
+
+    cover_dict = {}
+
+    # iterate through all nodes
+    for i in tqdm(range(P.shape[0]), disable=disable_tqdm):
+        # compute node component for i
+        component, sev = node_component(P, i, t, max_size)
+        # add nonempty components to cover as frozensets to avoid duplicates
+        if len(component) > 0:
+            cover_dict[frozenset(component)] = sev
+
+    # return cover as list of tuples of component and its severability
+    cover = []
+    for component, sev in cover_dict.items():
+        cover.append((list(component), sev))
+
+    return cover
 
 
 def node_component(P, i, t, max_size=50):
@@ -325,7 +365,7 @@ def main():
 
         print(sev, len(C), [ind2name[n] for n in C])
     else:
-        ans = minimal_component_cover(P, args.time, args.max_size)
+        ans = component_cover(P, args.time, args.max_size)
         appearing = set()
         print("")
         for C, sev in ans:
