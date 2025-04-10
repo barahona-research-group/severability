@@ -14,24 +14,17 @@ def mass_function(U):
     K_U, N = np.shape(Unew)
 
     # calculate mass functions
-    M_U = np.zeros((N, N))
-    for i in range(N):
-        for j in range(N):
-            total_same = 0
-            for k in range(K_U):
-                total_same += Unew[k, i] * Unew[k, j]
-            M_U[i, j] = total_same
+    M_U = np.dot(Unew.T, Unew)
 
     return M_U
 
 def rand_similarity(M_U, M_V):
     """Computes Rand similarity between two (soft) partitions."""
     N = len(M_U)
-    total = 0
-    for i in range(N):
-        for j in range(i, N):
-            # add distance
-            total += abs(M_U[i, j] - M_V[i, j])
+    
+    dist = abs( np.subtract (np.triu(M_U, k=1), np.triu(M_V, k=1)) )
+    total = np.sum( dist)
+    
     rho = 1 - total / (N * (N - 1) / 2)
 
     return rho

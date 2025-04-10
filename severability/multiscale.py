@@ -22,21 +22,15 @@ def _optimise(seed, P, t, max_size):
 def _compute_mean_severability(partition, n_nodes, weighted=True):
     """ "Compute mean severability of partition."""
     if weighted is True:
+        
         part = partition_to_matrix(partition, n_nodes, individuals=True)
-
         K, N = np.shape(part)
-        node_sev = [0 for i in range(N)]
-
-        for i in range(N):
-            total = 0
-            count = 0
-            for j in range(K):
-                if part[j, i] > 0:
-                    total += part[j, i]
-                    count += 1
-                else:
-                    pass
-            node_sev[i] = total / count
+        
+        mask = part > 0 
+        column_counts = mask.sum(axis = 0)
+        column_sums = part.sum(axis = 0)
+       
+        node_sev = np.divide( column_sums, column_counts)
 
         return np.mean(node_sev)
     else:
