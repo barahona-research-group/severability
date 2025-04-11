@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 import severability
 from severability.utils import partition_to_matrix
+from severability.optimal_scales import identify_optimal_scales
 
 
 def _get_chunksize(n_comp, pool):
@@ -45,6 +46,8 @@ def multiscale_severability(
     n_rand=10,
     n_workers=1,
     max_size=50,
+    with_optimal_scales = True,
+    optimal_scales_kwargs = None,
     seed=42,
     filename="sev_results.pkl",
 ):
@@ -119,7 +122,9 @@ def multiscale_severability(
 
     print("Compute 1-Rand(t,t') ...")
     rand_ttprime = severability.compute_rand_ttprime(partitions, n_nodes=n_nodes)
-
+    
+    
+    
     # store results as dictionary
     results = {
         "scales": scales,
@@ -131,6 +136,14 @@ def multiscale_severability(
         "partitions": partitions,
         "all_partitions": all_partitions,
     }
+    
+    if with_optimal_scales:
+        if optimal_scales_kwargs is None:
+            optimal_scales_kwargs = {
+                "kernel_size": max(2, int(0.1 * t_max)),
+                "basin_radius": max(1, int(0.01 * t_max)),
+            }
+        results = identify_optimal_scales(results, **optimal_scales_kwargs)    
 
     severability.save_results(results, filename)
 
