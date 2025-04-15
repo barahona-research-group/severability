@@ -10,6 +10,7 @@ setup(
     author="Yun William Yu, Juni Schindler",
     install_requires=[
         "numpy>=1.18.1",
+        "scipy"
     ],
     zip_safe=False,
     packages=find_packages(),

@@ -1,14 +1,11 @@
-""" code for plotting"""
+"""Code for plotting."""
 
-import os
-
-import matplotlib
+import numpy as np
+import logging
 import matplotlib.pyplot as plt
 
 from matplotlib import gridspec
-from matplotlib import patches
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from tqdm import tqdm
 
 try:
     import plotly.graph_objects as go
@@ -19,12 +16,9 @@ except ImportError:  # pragma: no cover
 import graph_tool.all as gt 
 import networkx as nx
 
-from severability.optimal_scales import identify_optimal_scales
 from severability.utils import partition_to_matrix
 
-import numpy as np
 
-import logging
 
 L = logging.getLogger(__name__)
 
@@ -463,7 +457,7 @@ def vertex_properties(G, U):
 
 
 
-def plot_pie_graph(partition, adj, n_nodes, seed = 6):
+def plot_pie_graph(partition, adj, seed = 6):
     """
     Input:
         U: partition matrix 
@@ -473,6 +467,7 @@ def plot_pie_graph(partition, adj, n_nodes, seed = 6):
     Output:
         plots the visualisation
     """
+    n_nodes = adj.shape[0]
     U = partition_to_matrix(partition, n_nodes, individuals = True)
     graph, pos = graph_position(adj, seed)
     vprops = vertex_properties(graph, U)

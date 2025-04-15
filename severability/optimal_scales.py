@@ -1,7 +1,6 @@
 """Detect optimal scales from a scale scan."""
 
 import numpy as np
-import pandas as pd
 from numpy.lib.stride_tricks import as_strided
 from scipy.signal import find_peaks
 
@@ -45,7 +44,7 @@ def _pool2d_rand(A, kernel_size, stride, padding=0):
     return np.nanmean(A_w, axis=(2, 3))
 
 
-def identify_optimal_scales(results, kernel_size=3, , max_rand=1, basin_radius=1):
+def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1):
     """Identifies optimal scales in Severability.
 
     Robust scales are found in a sequential way. We first search for large diagonal blocks
@@ -73,7 +72,8 @@ def identify_optimal_scales(results, kernel_size=3, , max_rand=1, basin_radius=1
         rand_tt, kernel_size=kernel_size, stride=1, padding=int(kernel_size / 2)
     )
 
-    results["block_rand"] = np.diag(rand_tt_pooled)[: len(rand_t)]
+    block_rand = np.diag(rand_tt_pooled)[: len(rand_t)]
+    results["block_rand"] = block_rand
 
     # find local minima on diagonal of pooled 1-Rand(s,s')
     basin_centers, _ = find_peaks(-block_rand, height=-max_rand)

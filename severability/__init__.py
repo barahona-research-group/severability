@@ -4,3 +4,4 @@ from .severability import component_cover, node_component, node_component_cover,
 from .multiscale import multiscale_severability
 from .rand import compute_rand_ttprime
 from .io import save_results, load_results
+from .plotting import plot_scan, plot_pie_graph
