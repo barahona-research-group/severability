@@ -40,22 +40,61 @@ def _compute_mean_severability(partition, n_nodes, weighted=True):
 
 
 def multiscale_severability(
-    P,
+    A,
+    t_min=1,
     t_max=2,
     n_tries=20,
-    n_rand=10,
     n_workers=1,
     max_size=50,
-    with_optimal_scales = True,
-    optimal_scales_kwargs = None,
+    with_optimal_scales=True,
+    optimal_scales_kwargs=None,
     seed=42,
     filename="sev_results.pkl",
 ):
-    """ "Compute multiscale severability."""
+    """
+    Compute multiscale severability for a given adjacency matrix.
 
-    scales = np.arange(1, t_max + 1)
+    This function evaluates the severability of a graph across multiple scales 
+    by optimizing community partitions and computing severability metrics. 
+    It supports parallel processing for efficiency and can optionally identify 
+    optimal scales for severability.
+
+    Args:
+        A (numpy.ndarray): Adjacency matrix of the graph.
+        t_min (int, optional): Minimum scale to evaluate. Defaults to 1.
+        t_max (int, optional): Maximum scale to evaluate. Defaults to 2.
+        n_tries (int, optional): Number of optimization attempts per scale. Defaults to 20.
+        n_workers (int, optional): Number of parallel workers for multiprocessing. Defaults to 1.
+        max_size (int, optional): Maximum size of communities during optimization. Defaults to 50.
+        with_optimal_scales (bool, optional): Whether to identify optimal scales. Defaults to True.
+        optimal_scales_kwargs (dict, optional): Additional arguments for identifying optimal scales. Defaults to None.
+        seed (int, optional): Random seed for reproducibility. Defaults to 42.
+        filename (str, optional): File name to save the results. Defaults to "sev_results.pkl".
+
+    Returns:
+        dict: A dictionary containing the following keys:
+            - "scales": Array of scales evaluated.
+            - "mean_size": Mean size of communities at each scale.
+            - "n_communities": Number of communities at each scale.
+            - "mean_sev": Mean severability at each scale.
+            - "rand_t": Average 1-Rand index for partitions at each scale.
+            - "rand_ttprime": 1-Rand index between partitions across scales.
+            - "partitions": Optimal partitions at each scale.
+            - "all_partitions": All partitions generated during optimization.
+            - Additional keys if `with_optimal_scales` is True.
+
+    Notes:
+        - The function uses multiprocessing to speed up the optimization process.
+        - Severability metrics are computed using the `severability` module.
+        - Results are saved to a file in pickle format for later use.
+    """
+
+    scales = np.arange(t_min, t_max + 1)
     n_scales = len(scales)
-    n_nodes = P.shape[0]
+    n_nodes = A.shape[0]
+
+    # transform A to np.matrix and compute transition matrix
+    P = severability.transition_matrix(np.matrix(A))
 
     # initialise random number generator
     parent_rng = np.random.default_rng(seed)
@@ -109,10 +148,10 @@ def multiscale_severability(
         # compute statistics for optimal partition
         partitions.append(optimal_partition_t)
 
-        # compute average 1-Rand(t) for n_rand samples TODO: this already adds the orphans
+        # compute average 1-Rand(t) TODO: this already adds the orphans
         rand_t[i] = np.mean(
             severability.compute_rand_ttprime(
-                all_partitions_t[:n_rand], n_nodes=n_nodes
+                all_partitions_t, n_nodes=n_nodes
             )
         )
 
