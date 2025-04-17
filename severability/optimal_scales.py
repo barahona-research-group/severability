@@ -114,12 +114,7 @@ def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1):
             min(basin_center + basin_radius + 1, not_nan_ind[-1]),
             dtype="int",
         )
-        robust_scales.add(basin[np.argmin(rand_t[basin])])
-
-    # check for Markov time 1 inclusion:
-    if rand_t[0] < rand_t[1]:
-        robust_scales.add(0)
-   
+        robust_scales.add(basin[np.argmin(rand_t[basin])])  
     
     # sort robust scales
     robust_scales = list(robust_scales)
