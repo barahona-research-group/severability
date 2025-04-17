@@ -179,7 +179,7 @@ def multiscale_severability(
     if with_optimal_scales:
         if optimal_scales_kwargs is None:
             optimal_scales_kwargs = {
-                "kernel_size": max(2, int(0.1 * t_max)),
+                "kernel_size": max(3, int(0.1 * t_max)),
                 "basin_radius": max(1, int(0.01 * t_max)),
             }
         results = identify_optimal_scales(results, **optimal_scales_kwargs)    
