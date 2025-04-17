@@ -10,9 +10,14 @@ try:
     import plotly.graph_objects as go
     from plotly.offline import plot as _plot
 except ImportError:  # pragma: no cover
-    pass
+    print("Interactive pliotting requires plotly.")
 
-import graph_tool.all as gt 
+try:
+    import graph_tool.all as gt 
+except ImportError:  # pragma: no cover
+    print("Plotting of overlapping communities requires graph-tool.")
+    
+
 import networkx as nx
 
 from severability.utils import partition_to_matrix
@@ -72,7 +77,7 @@ def plot_scan_plotly(  # pylint: disable=too-many-branches,too-many-statements,t
 
     text = [
         f"""Number of communities: {n}, <br> Severability: {np.round(s, 3)},
-        <br> Rand(t): {np.round(vi, 3)}, <br> Index: {i}"""
+        <br> Rand(t): {np.round(r_t, 3)}, <br> Index: {i}"""
         for n, s, r_t, i in zip(
             all_results["n_communities"],
             all_results["mean_sev"],
@@ -95,7 +100,7 @@ def plot_scan_plotly(  # pylint: disable=too-many-branches,too-many-statements,t
     if "rand_ttprime" in all_results:
         z = all_results["rand_ttprime"]
         showscale = True
-        tprime_title = "Scale"
+        tprime_title = "1-Rand(t,t')"
     else:  # pragma: no cover
         z = np.nan + np.zeros([len(scales), len(scales)])
         showscale = False
@@ -144,7 +149,7 @@ def plot_scan_plotly(  # pylint: disable=too-many-branches,too-many-statements,t
             "domain": [0.0, 0.28],
         },
         yaxis2={
-            "title": rand_ttprime_title,
+            "title": tprime_title,
             "title_font": {"color": "black"},
             "tickfont": {"color": "black"},
             "domain": [0.32, 1],
