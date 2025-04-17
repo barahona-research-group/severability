@@ -1,7 +1,6 @@
 """Code for plotting."""
 
 import numpy as np
-import logging
 import matplotlib.pyplot as plt
 
 from matplotlib import gridspec
@@ -18,12 +17,9 @@ import networkx as nx
 
 from severability.utils import partition_to_matrix
 
-
-
-L = logging.getLogger(__name__)
-
-
-""" Code for plotting optimal scales """
+########################################
+### Code for plotting optimal scales ###
+########################################
 
 def plot_scan(
     all_results,
@@ -44,8 +40,6 @@ def plot_scan(
         plotly_filename (str): filename of .html figure from plotly
     """
     if len(all_results["scales"]) == 1:  # pragma: no cover
-        L.info("Cannot plot the results if only one scale point, we display the result instead:")
-        L.info(all_results)
         return None
 
     if use_plotly:
@@ -61,7 +55,7 @@ def plot_scan_plotly(  # pylint: disable=too-many-branches,too-many-statements,t
     filename="clusters.html",
 ):
     """Plot results of pygenstability with plotly."""
-    scales = _get_scales(all_results)
+    scales = all_results["scales"]
 
     hovertemplate = str("<b>scale</b>: %{x:.2f}, <br>%{text}<extra></extra>")
 
@@ -83,7 +77,7 @@ def plot_scan_plotly(  # pylint: disable=too-many-branches,too-many-statements,t
             all_results["n_communities"],
             all_results["mean_sev"],
             rand_t_data,
-            np.arange(0, len(scales)),
+            scales,
         )
     ]
     ncom = go.Scatter(
@@ -183,13 +177,6 @@ def plot_scan_plotly(  # pylint: disable=too-many-branches,too-many-statements,t
     return fig, layout
 
 
-
-
-def _get_scales(all_results):
-    """Get the scale vector."""
-    return np.arange(len(all_results["scales"]))
-    
-
 def _plot_number_comm(all_results, ax, scales):
     """Plot number of communities."""
     ax.plot(scales, all_results["n_communities"], "-", c="C3", label="size", lw=2.0)
@@ -264,6 +251,7 @@ def _plot_optimal_scales(all_results, ax, scales, ax1, ax2):
     ax.tick_params("y", colors="C4")
     ax.set_ylabel("Block Rand", color="C4")
     ax.yaxis.set_label_position("left")
+    ax.set_xticks(scales)
     ax.set_xlabel(r"$t$")
 
     for scale in scales[all_results["selected_partitions"]]:
@@ -274,7 +262,7 @@ def _plot_optimal_scales(all_results, ax, scales, ax1, ax2):
 
 def plot_scan_plt(all_results, figsize=(6, 5), figure_name="scan_results.svg"):
     """Plot results of severability with matplotlib."""
-    scales = _get_scales(all_results)
+    scales = all_results["scales"]
     plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(3, 1, height_ratios=[0.5, 1.0, 0.5])
     gs.update(hspace=0)
@@ -322,8 +310,9 @@ def plot_scan_plt(all_results, figsize=(6, 5), figure_name="scan_results.svg"):
         plt.savefig(figure_name)
     
 
-
-""" Code for plotting pie chart visualisations """
+##################################################
+### Code for plotting pie chart visualisations ###
+##################################################
 
 def matrix_to_gt(adj):
     """
