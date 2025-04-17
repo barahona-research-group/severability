@@ -75,8 +75,17 @@ def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1):
     block_rand = np.diag(rand_tt_pooled)[: len(rand_t)]
     results["block_rand"] = block_rand
 
+    # replace nan at edges with 1, this allows to detect local minima at boundary
+    block_rand_extended = block_rand.copy()
+    block_rand_extended[~ (block_rand_extended >= 0)] = 1
+
+    # insert 1 to the left, this allows to detect local minima on left boundary
+    block_rand_extended = np.insert(block_rand_extended,0,1)
+
     # find local minima on diagonal of pooled 1-Rand(s,s')
-    basin_centers, _ = find_peaks(-block_rand, height=-max_rand)
+    basin_centers, _ = find_peaks(-block_rand_extended, height=-max_rand)
+    # adjust indices after we insert 1 at the beginning
+    basin_centers -= 1
 
     # add robust scales located in large 0 margins
     not_nan_ind = np.argwhere(~np.isnan(block_rand)).flatten()
