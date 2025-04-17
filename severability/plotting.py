@@ -10,16 +10,12 @@ try:
     import plotly.graph_objects as go
     from plotly.offline import plot as _plot
 except ImportError:  # pragma: no cover
-    print("Interactive pliotting requires plotly.")
-
+    pass
 try:
     import graph_tool.all as gt 
+    import networkx as nx
 except ImportError:  # pragma: no cover
-    print("Plotting of overlapping communities requires graph-tool.")
-    
-
-import networkx as nx
-
+    pass    
 from severability.utils import partition_to_matrix
 
 ########################################
@@ -258,6 +254,7 @@ def _plot_optimal_scales(all_results, ax, scales, ax1, ax2):
     ax.yaxis.set_label_position("left")
     ax.set_xticks(scales)
     ax.set_xlabel(r"$t$")
+    ax.set(xlim=(scales[0]-0.5,scales[-1]+0.5))
 
     for scale in scales[all_results["selected_partitions"]]:
         ax.axvline(scale, ls="--", color="C4")
@@ -308,7 +305,7 @@ def plot_scan_plt(all_results, figsize=(6, 5), figure_name="scan_results.svg"):
         axes.append(ax4)
 
     for ax in axes:
-        ax.set_xlim(scales[0], scales[-1])
+        ax.set_xlim(scales[0]-0.1, scales[-1]+0.1)
 
 
     if figure_name is not None:
@@ -409,11 +406,11 @@ def vertex_properties(G, U):
     """
     
     pie_frac, number_of_communities = compute_pie_fraction(U)
-    node_sizes = [15 for x in number_of_communities]  
+    node_sizes = [0.05 for x in number_of_communities]  
 
     # Identify orphan nodes
     orphan_nodes = set()
-    for k, row in enumerate(U):
+    for row in U:
         nonzero_indices = np.nonzero(row)[0]
         if len(nonzero_indices) == 1 and row[nonzero_indices[0]] == 0.5:
             orphan_nodes.add(nonzero_indices[0])
@@ -431,9 +428,9 @@ def vertex_properties(G, U):
 
         if idx in orphan_nodes:
             shape_property[v] = "square"
-            size_property[v] = node_sizes[idx] + 10  
+            size_property[v] = node_sizes[idx] + 0.02
             color_property[v] = [1.0, 1.0, 1.0, 1.0]  # white
-            border_width_property[v] = 2.0
+            border_width_property[v] = 0.005
         else:
             shape_property[v] = "pie"
             size_property[v] = node_sizes[idx]
@@ -451,20 +448,40 @@ def vertex_properties(G, U):
 
 
 
-def plot_pie_graph(partition, adj, seed = 6):
+def plot_pie_graph(partition, adj, seed=6, title=None):
     """
     Input:
-        U: partition matrix 
-        adj: adjacency matrix
-        seed controlling graph layout
+        partition: Partition matrix 
+        adj: Adjacency matrix
+        seed: Seed controlling graph layout
+        title: Title for the plot
         
     Output:
-        plots the visualisation
+        Plots the visualisation
     """
     n_nodes = adj.shape[0]
-    U = partition_to_matrix(partition, n_nodes, individuals = True)
+    U = partition_to_matrix(partition, n_nodes, individuals=True)
     graph, pos = graph_position(adj, seed)
     vprops = vertex_properties(graph, U)
-    gt.graph_draw(graph, pos = pos, vprops = vprops)
-    
-    
+
+    # Create edge properties for smaller edges
+    edge_width_property = graph.new_edge_property("double")
+    for e in graph.edges():
+        edge_width_property[e] = 0.005  # Set edge width to a smaller value
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+    gt.graph_draw(
+        graph,
+        pos=pos,
+        vprops=vprops,
+        eprops={"pen_width": edge_width_property},  
+        mplfig=ax,
+    )
+    ax.axis("off")
+    if title is not None:
+        ax.set(title=title)
+
+    plt.show()
+
+    return ax
+
