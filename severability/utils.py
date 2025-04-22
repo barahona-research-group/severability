@@ -1,6 +1,10 @@
 """Utils for severability."""
 
 import numpy as np
+from itertools import combinations
+import copy
+
+from severability import severability_of_component, transition_matrix
 
 
 def orphan_nodes(partition, n_nodes):
@@ -44,3 +48,53 @@ def partition_to_matrix(partition, n_nodes, individuals=True):
         return updated_U
     else:
         return U
+
+
+def merge_clusters(partitions, A, threshold):
+    """
+    Merge clusters together if the number of overlapping nodes > threshold
+
+    Input:
+        partitions - list of partition results over MT 
+        A - Adjacency matrix 
+        threshold
+
+    Output:
+        list of updated partitions
+    """
+    partitions = copy.deepcopy(partitions)
+    P = transition_matrix(np.matrix(A))
+
+    for t in range(len(partitions)):
+        part = partitions[t]
+        merged = True
+
+        while merged:
+            merged = False
+            n = len(part)
+            to_merge = None
+
+            for i, j in combinations(range(n), 2):
+                cluster1, _ = part[i]
+                cluster2, _ = part[j]
+
+                overlap = set(cluster1) & set(cluster2)
+
+                if len(overlap) > threshold:
+                    to_merge = (i, j)
+                    break  # Only merge one pair at a time
+
+            if to_merge:
+                i, j = to_merge
+                new_nodes = list(set(part[i][0]) | set(part[j][0]))
+                sev = severability_of_component(P, new_nodes, t)
+
+                # Remove the two clusters and add the merged one
+                part = [part[k] for k in range(n) if k != i and k != j]
+                part.append([new_nodes, sev])
+                merged = True
+
+        part.sort(key=lambda x: x[1], reverse=True)
+        partitions[t] = part
+
+    return partitions
