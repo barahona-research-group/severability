@@ -44,7 +44,7 @@ def _pool2d_rand(A, kernel_size, stride, padding=0):
     return np.nanmean(A_w, axis=(2, 3))
 
 
-def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1):
+def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1, include_boundary=True):
     """Identifies optimal scales in Severability.
 
     Robust scales are found in a sequential way. We first search for large diagonal blocks
@@ -58,6 +58,8 @@ def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1):
         kernel_size (int): size of kernel for average-pooling of the 1-Rand(t,t') matrix
         max_nvi (float): threshold for local minima of the pooled diagonal
         basin_radius (int): radius of basin around local minima of the pooled diagonal
+        include_boundary (bool): if True, include the left and right boundaries of the
+            block detection curve in the search for local minima
 
     Returns:
         result dictionary with two new keys: 'selected_partitions' and 'block_rand'
@@ -79,8 +81,12 @@ def identify_optimal_scales(results, kernel_size=3, max_rand=1, basin_radius=1):
     block_rand_extended = block_rand.copy()
     block_rand_extended[~ (block_rand_extended >= 0)] = 1
 
-    # insert 1 to the left, this allows to detect local minima on left boundary
-    block_rand_extended = np.insert(block_rand_extended,0,1)
+    if include_boundary:
+        # insert 1 to the left, this allows to detect local minima on left boundary
+        block_rand_extended = np.insert(block_rand_extended,0,1)
+
+        # append 1 to the right, this allows to detect local minima on right boundary
+        block_rand_extended = np.append(block_rand_extended, 1)
 
     # find local minima on diagonal of pooled 1-Rand(s,s')
     basin_centers, _ = find_peaks(-block_rand_extended, height=-max_rand)
