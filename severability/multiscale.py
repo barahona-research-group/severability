@@ -2,6 +2,8 @@
 
 import multiprocessing
 import numpy as np
+from itertools import combinations
+import copy
 
 from functools import partial
 from tqdm import tqdm
@@ -37,6 +39,94 @@ def _compute_mean_severability(partition, n_nodes, weighted=True):
     else:
         # compute unweighted mean severability over all clusters
         return np.mean([strength for _, strength in partition])
+
+
+
+def merge_clusters(sev_results, A, threshold, n_nodes, n_tries):
+    """
+    Merge clusters together if the overlap coefficient > threshold
+
+    Input:
+        sev_results - list of partition results over MT 
+        A - Adjacency matrix 
+        threshold
+
+    Output:
+        list of updated partitions
+    """
+    sev_results = copy.deepcopy(sev_results)
+
+    all_partitions = sev_results["all_partitions"]
+    scales = sev_results["scales"]
+
+    #all_partitions = copy.deepcopy(all_partitions)
+    P = severability.transition_matrix(np.matrix(A))
+
+    for t_id in range(len(scales)):
+        partitions_scale = all_partitions[t_id]
+        
+        t = scales[t_id]
+        
+        for n in range(n_tries):
+            
+            part = partitions_scale[n]
+            original_part = copy.deepcopy(part)
+            mean_sev = _compute_mean_severability(part, n_nodes)
+            
+            while True:
+
+                changed = False 
+
+                c = len(part)
+                overlaps = []
+
+                # find all the overlaps in a partition
+                for i, j in combinations(range(c), 2):
+
+                    cluster1, _ = part[i]
+                    cluster2, _ = part[j]
+
+                    overlap_coeff = len(set(cluster1) & set(cluster2))/ min(len(cluster1), len(cluster2))
+
+                    if overlap_coeff > threshold:
+                        overlaps.append((overlap_coeff, (i, j)))
+
+                if not overlaps:
+                    break 
+
+                # put in descending order
+                overlaps.sort(key=lambda x: x[0], reverse=True) 
+                    
+                for k in range(len(overlaps)):
+                    coeff, (i, j) = overlaps[k]
+
+                    cluster1, _ = part[i]
+                    cluster2, _ = part[j]
+                
+                    new_cluster = list(set(cluster1) | set(cluster2))
+                    new_sev = severability.severability_of_component(P, new_cluster, t)
+
+                    part_merged = [part[k] for k in range(c) if k != i and k != j]                        
+                    part_merged.append([new_cluster, new_sev])
+
+                    new_mean_sev = _compute_mean_severability(part_merged, n_nodes)
+
+                    if new_mean_sev > mean_sev:
+                        part = part_merged
+                        mean_sev = new_mean_sev 
+                        changed = True                            
+
+                        break
+                
+                if not changed:
+                    break
+                             
+            partitions_scale[n] = part
+        all_partitions[t_id] = partitions_scale
+
+    sev_results["all_partitions"] = all_partitions
+
+    return sev_results
 
 
 def multiscale_severability(
