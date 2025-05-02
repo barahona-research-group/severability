@@ -72,7 +72,8 @@ def merge_clusters(sev_results, A, threshold, n_nodes, n_tries):
             part = partitions_scale[n]
             original_part = copy.deepcopy(part)
             mean_sev = _compute_mean_severability(part, n_nodes)
-            
+
+
             while True:
 
                 changed = False 
@@ -102,12 +103,20 @@ def merge_clusters(sev_results, A, threshold, n_nodes, n_tries):
 
                     cluster1, _ = part[i]
                     cluster2, _ = part[j]
+
+                    # handle duplicates 
+                    if set (cluster1) == set(cluster2):
+                        part_merged = [part[k] for k in range (c) if k !=j]
+                        part = part_merged
+                        changed = True
+                        break
                 
                     new_cluster = list(set(cluster1) | set(cluster2))
                     new_sev = severability.severability_of_component(P, new_cluster, t)
 
                     part_merged = [part[k] for k in range(c) if k != i and k != j]                        
                     part_merged.append([new_cluster, new_sev])
+
 
                     new_mean_sev = _compute_mean_severability(part_merged, n_nodes)
 
