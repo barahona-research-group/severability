@@ -61,7 +61,7 @@ To run an example from the command line, run the following:
 ## Contributors
 
 - Yun William Yu, GitHub: `yunwilliamyu <https://github.com/yunwilliamyu>`
-- Dominik Schindler, GitHub: `d-schindler <https://github.com/d-schindler>`
+- Juni Schindler, GitHub: `juni-schindler <https://github.com/juni-schindler>`
 
 We always look out for individuals that are interested in contributing to this open-source project. Even if you are just using `severability` and made some minor updates, we would be interested in your input. 
 
